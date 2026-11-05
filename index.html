@@ -1,0 +1,2006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eye test (Blake)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f6f2;
+    --ink:#15191a;
+    --muted:#84897f;
+    --line:#dcdad2;
+    --accent:#2f5d50;
+    --accent-soft:#e3ece9;
+  }
+  *{box-sizing:border-box;}
+  html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    text-transform:lowercase;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button, input[type="range"]{
+    touch-action:manipulation; /* removes the ~300ms tap delay on mobile browsers */
+  }
+  button{ min-height:44px; } /* meets the standard touch-target size guideline */
+  .card{
+    width:100%;
+    max-width:480px;
+    border:1px solid var(--line);
+    background:#fff;
+    padding:36px 32px;
+    position:relative;
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0;
+    height:3px;
+    background:var(--accent);
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.12em;
+    color:var(--muted);
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:22px;
+  }
+  h1{
+    font-size:20px;
+    font-weight:600;
+    margin:0 0 16px;
+    letter-spacing:.01em;
+  }
+  p{
+    font-size:13px;
+    line-height:1.7;
+    color:var(--ink);
+    margin:0 0 14px;
+  }
+  ul{
+    margin:0 0 22px;
+    padding-left:18px;
+  }
+  li{
+    font-size:13px;
+    line-height:1.8;
+    color:var(--ink);
+  }
+  .muted{ color:var(--muted); font-size:12px; }
+  button{
+    font-family:inherit;
+    text-transform:lowercase;
+    font-size:13px;
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    padding:12px 20px;
+    cursor:pointer;
+    letter-spacing:.02em;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  button:hover{ opacity:.85; }
+  button.secondary{
+    background:#fff;
+    color:var(--ink);
+    border:1px solid var(--line);
+  }
+  button.ghost{
+    background:transparent;
+    color:var(--muted);
+    border:none;
+    padding:6px 0;
+    text-decoration:underline;
+    font-size:12px;
+    min-height:36px;
+  }
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .actions{
+    margin-top:26px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .screen{ display:none; }
+  .screen.active{ display:block; }
+
+  .stage{
+    height:210px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px dashed var(--line);
+    background:var(--bg);
+    margin-bottom:22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .optotype{
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight:800;
+    color:var(--ink);
+    text-transform:lowercase;
+    user-select:none;
+  }
+  .prompt{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:12px;
+  }
+  .choices{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .choices button{
+    background:#fff;
+    color:var(--ink);
+    border:1px solid var(--line);
+    padding:18px 8px;
+    font-size:28px;
+    font-weight:700;
+    line-height:1;
+  }
+  .choices.words button{
+    font-size:20px;
+    padding:16px 8px;
+  }
+  .choices button:hover{ border-color:var(--accent); color:var(--accent); }
+
+  .swatchgrid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .swatch{
+    aspect-ratio:1;
+    border-radius:50%;
+    cursor:pointer;
+    border:none;
+  }
+
+  .fixdot{
+    position:absolute;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--accent);
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    z-index:2;
+  }
+  .peri-letter{
+    position:absolute;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-weight:800;
+    color:var(--ink);
+  }
+
+  video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transform:scaleX(-1);
+  }
+
+  .cv-video-wrap{
+    position:relative;
+    width:100%;
+    height:100%;
+    --eye-gap: 22%;
+  }
+  .cv-overlay{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+  }
+  .cv-guide{
+    position:absolute;
+    top:50%;
+    width:20%;
+    aspect-ratio:1;
+    border:2px dashed rgba(47,93,80,.85);
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  .cv-guide.left{ left:calc(50% - var(--eye-gap)); }
+  .cv-guide.right{ left:calc(50% + var(--eye-gap)); }
+  .cv-gapctrl{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:10px 0 4px;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .cv-gapctrl input[type="range"]{
+    flex:1;
+    accent-color:var(--accent);
+  }
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(21,25,26,.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:50;
+  }
+  .modal-box{
+    background:#fff;
+    border:1px solid var(--line);
+    max-width:420px;
+    width:100%;
+    padding:26px 24px;
+    position:relative;
+  }
+  .modal-box::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0;
+    height:3px;
+    background:var(--accent);
+  }
+  .modal-close{
+    position:absolute;
+    top:12px;
+    right:14px;
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:16px;
+    cursor:pointer;
+    padding:4px;
+    line-height:1;
+  }
+  .modal-close:hover{ color:var(--ink); }
+  .cv-flash{
+    position:absolute;
+    inset:0;
+    background:#fff;
+    opacity:0;
+  }
+  .cv-flash.go{
+    animation:cvflash .18s ease-out;
+  }
+  @keyframes cvflash{ from{opacity:.85;} to{opacity:0;} }
+  .eyeswatch{
+    display:inline-block;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    vertical-align:middle;
+    margin-right:6px;
+    position:relative;
+    top:2px;
+  }
+
+  .rarity-bar-row{ margin:10px 0 14px; }
+  .rarity-bar-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    margin-bottom:5px;
+  }
+  .rarity-bar-track{
+    height:8px;
+    background:var(--accent-soft);
+    border-radius:5px;
+    overflow:hidden;
+  }
+  .rarity-bar-fill{
+    height:100%;
+    background:var(--accent);
+    border-radius:5px 0 0 5px;
+  }
+  .heterochromia-note{
+    font-size:12px;
+    line-height:1.7;
+    color:var(--ink);
+    background:var(--accent-soft);
+    border:1px solid var(--line);
+    padding:12px 14px;
+    margin:12px 0 4px;
+  }
+
+  svg{ display:block; margin:0 auto; }
+
+  .footrow{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:4px;
+  }
+
+  .slip{
+    border:1px dashed var(--line);
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .slip .big{
+    font-size:34px;
+    font-weight:600;
+    color:var(--accent);
+    letter-spacing:.01em;
+  }
+  .slip .label{ font-size:11px; color:var(--muted); margin-bottom:4px; }
+  .breakdown{ margin-top:18px; }
+  .breakdown-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    padding:8px 0;
+    border-top:1px solid var(--line);
+  }
+  .score-num{
+    font-size:56px;
+    font-weight:600;
+    line-height:1;
+    margin:6px 0 0;
+  }
+  .score-of{ font-size:14px; color:var(--muted); }
+
+  @media (max-width: 400px){
+    body{ padding:12px; }
+    .card{ padding:24px 18px; }
+    .modal-box{ padding:20px 16px; }
+    h1{ font-size:18px; }
+    .stage{ height:180px; }
+    .choices button{ font-size:22px; padding:14px 6px; }
+    .score-num{ font-size:44px; }
+    .slip .big{ font-size:28px; }
+    .row{ gap:8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- intro -->
+  <div class="screen active" id="screen-intro">
+    <div class="eyebrow"><span>eye test</span><span>0 / 7</span></div>
+    <h1>a 7-part eye screening</h1>
+    <p>most tests keep going and get harder until you miss three rounds in a row — that's the point, it's meant to find your limit, not stay fully readable.</p>
+    <ul>
+      <li>hold your laptop at arm's length, roughly 50–70cm away</li>
+      <li>sit somewhere well lit, and avoid glare on the screen</li>
+      <li>keep your glasses or contacts on if you normally wear them</li>
+      <li>set your screen brightness to normal or full</li>
+      <li>use "i don't know" to move straight to the next test — it's not a guess, it just means you're unsure</li>
+      <li>you can skip any test if you'd rather not do it</li>
+      <li>one test uses your camera for a guided self check — you'll be asked for permission at that point</li>
+    </ul>
+    <p class="muted">this is a screening tool, not a diagnosis. see an eye doctor for a real exam.</p>
+    <div class="row" id="intro-history-row" style="display:none; margin-bottom:4px;">
+      <button class="secondary" onclick="goTo('history')">saved results</button>
+    </div>
+    <div class="actions">
+      <span></span>
+      <button onclick="goTo('acuity')">start</button>
+    </div>
+  </div>
+
+  <!-- past results list -->
+  <div class="screen" id="screen-history">
+    <div class="eyebrow"><span>saved results</span><span></span></div>
+    <h1>your saved history</h1>
+    <div class="slip" id="history-summary"></div>
+    <div class="row" style="margin-bottom:16px;">
+      <button class="secondary" onclick="goTo('eyestats')">eye stats</button>
+    </div>
+    <div id="history-list"></div>
+    <div class="actions">
+      <span></span>
+      <button class="secondary" onclick="goTo('intro')">back</button>
+    </div>
+  </div>
+
+  <!-- generic detail viewer, used for both a saved test-results readout and a saved eye-recognition readout -->
+  <div class="screen" id="screen-history-detail">
+    <div class="eyebrow"><span id="history-detail-title">saved entry</span><span></span></div>
+    <div id="history-detail-body"></div>
+    <div class="actions">
+      <span></span>
+      <button class="secondary" onclick="goTo('history')">back to list</button>
+    </div>
+  </div>
+
+  <!-- eye stats: averages across all saved eye-recognition entries -->
+  <div class="screen" id="screen-eyestats">
+    <div class="eyebrow"><span>eye stats</span><span></span></div>
+    <h1>average eye readout</h1>
+    <div id="eyestats-body"></div>
+    <div class="actions">
+      <span></span>
+      <button class="secondary" onclick="goTo('history')">back</button>
+    </div>
+  </div>
+
+  <!-- test 1: visual acuity -->
+  <div class="screen" id="screen-acuity">
+    <div class="eyebrow"><span>test 1 / 7 — visual acuity</span><span id="acuity-count"></span></div>
+    <p>pick the letter shown below. it keeps shrinking round after round.</p>
+    <div class="stage"><span class="optotype" id="acuity-letter"></span></div>
+    <div class="prompt">which letter is this?</div>
+    <div class="choices" id="acuity-choices"></div>
+    <div class="footrow">
+      <button class="ghost" onclick="idkAnswer('acuity')">i don't know</button>
+      <button class="ghost" onclick="skipTest('acuity')">skip this test</button>
+    </div>
+  </div>
+
+  <!-- test 2: color perception -->
+  <div class="screen" id="screen-color">
+    <div class="eyebrow"><span>test 2 / 7 — color perception</span><span id="color-count"></span></div>
+    <p>one circle is a slightly different shade. click on it. the difference keeps shrinking round after round.</p>
+    <div class="swatchgrid" id="color-grid"></div>
+    <div class="footrow">
+      <button class="ghost" onclick="idkAnswer('color')">i don't know</button>
+      <button class="ghost" onclick="skipTest('color')">skip this test</button>
+    </div>
+  </div>
+
+  <!-- test 3: contrast sensitivity -->
+  <div class="screen" id="screen-contrast">
+    <div class="eyebrow"><span>test 3 / 7 — contrast sensitivity</span><span id="contrast-count"></span></div>
+    <p>pick the letter shown below. it keeps fading round after round.</p>
+    <div class="stage"><span class="optotype" id="contrast-letter" style="font-size:60px;"></span></div>
+    <div class="prompt">which letter is this?</div>
+    <div class="choices" id="contrast-choices"></div>
+    <div class="footrow">
+      <button class="ghost" onclick="idkAnswer('contrast')">i don't know</button>
+      <button class="ghost" onclick="skipTest('contrast')">skip this test</button>
+    </div>
+  </div>
+
+  <!-- test 4: near vision -->
+  <div class="screen" id="screen-near">
+    <div class="eyebrow"><span>test 4 / 7 — near vision</span><span id="near-count"></span></div>
+    <p>pick the word shown below. it keeps shrinking round after round.</p>
+    <div class="stage"><span class="optotype" id="near-word"></span></div>
+    <div class="prompt">which word is this?</div>
+    <div class="choices words" id="near-choices"></div>
+    <div class="footrow">
+      <button class="ghost" onclick="idkAnswer('near')">i don't know</button>
+      <button class="ghost" onclick="skipTest('near')">skip this test</button>
+    </div>
+  </div>
+
+  <!-- test 5: peripheral awareness -->
+  <div class="screen" id="screen-peri">
+    <div class="eyebrow"><span>test 5 / 7 — peripheral awareness</span><span id="peri-count"></span></div>
+    <p>stare at the center dot without moving your eyes. a letter will flash off to the side — pick which one it was. the flash gets quicker each round, for 5 rounds.</p>
+    <div class="stage" id="peri-stage">
+      <div class="fixdot"></div>
+    </div>
+    <div class="prompt" id="peri-prompt">focus on the dot, then click start round</div>
+    <div class="choices" id="peri-choices"></div>
+    <div class="footrow">
+      <button class="ghost" onclick="idkAnswer('peri')">i don't know</button>
+      <button class="ghost" onclick="skipTest('peri')">skip this test</button>
+    </div>
+  </div>
+
+  <!-- test 6: astigmatism screen -->
+  <div class="screen" id="screen-astig">
+    <div class="eyebrow"><span>test 6 / 7 — astigmatism screen</span><span id="astig-count"></span></div>
+    <p>look at the center of the pattern below. do all the lines look equally dark and equally sharp?</p>
+    <div class="stage" id="astig-stage"></div>
+    <div class="row" style="justify-content:center; margin-top:4px;">
+      <button class="secondary" onclick="answerAstig('yes')">yes, all equal</button>
+      <button class="secondary" onclick="answerAstig('no')">no, some differ</button>
+    </div>
+    <div class="footrow">
+      <button class="ghost" onclick="idkAnswer('astig')">i don't know</button>
+      <button class="ghost" onclick="skipTest('astig')">skip this test</button>
+    </div>
+  </div>
+
+  <!-- test 8: amsler grid (distortion) -->
+  <div class="screen" id="screen-amsler">
+    <div class="eyebrow"><span>test 7 / 7 — grid distortion</span><span id="amsler-count"></span></div>
+    <p>look at the dot in the middle of the grid. do all the lines look straight and evenly spaced?</p>
+    <div class="stage" id="amsler-stage"></div>
+    <div class="row" style="justify-content:center; margin-top:4px;">
+      <button class="secondary" onclick="answerAmsler('yes')">yes, all straight</button>
+      <button class="secondary" onclick="answerAmsler('no')">no, wavy or uneven</button>
+    </div>
+    <div class="footrow">
+      <button class="ghost" onclick="idkAnswer('amsler')">i don't know</button>
+      <button class="ghost" onclick="skipTest('amsler')">skip this test</button>
+    </div>
+  </div>
+
+  <!-- results -->
+  <div class="screen" id="screen-results">
+    <div class="eyebrow"><span>results</span><span>7 / 7</span></div>
+    <h1>your results</h1>
+    <div class="slip">
+      <div class="label">visual acuity</div>
+      <div class="big" id="result-snellen">20/20</div>
+      <div class="score-of" style="margin-top:14px;">overall score</div>
+      <div class="score-num"><span id="result-score">0</span><span class="score-of">/100</span></div>
+    </div>
+    <div class="breakdown" id="result-breakdown"></div>
+    <p class="muted" style="margin-top:18px;">a rough self-screening, not a diagnosis. see an eye doctor for a real exam.</p>
+    <div class="row" style="margin-top:4px;">
+      <button class="ghost" onclick="openSaveModal()">save these results</button>
+    </div>
+    <div class="actions">
+      <button class="secondary" onclick="goTo('cv')">run computer-vision analysis</button>
+      <button onclick="restart()">retake test</button>
+    </div>
+  </div>
+
+  <!-- save modal -->
+  <div class="modal-backdrop" id="save-modal" style="display:none;" onclick="if(event.target===this) closeSaveModal()">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeSaveModal()" aria-label="close">&#10005;</button>
+      <h1 style="font-size:16px;">save this session</h1>
+      <p class="muted">saved locally in this browser only — nothing is uploaded.</p>
+      <div style="margin:16px 0;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px;">
+          <input type="checkbox" id="save-chk-tests"> save test results
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px;">
+          <input type="checkbox" id="save-chk-cv"> save eye recognition (color + metrics)
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; padding-left:24px;">
+          <input type="checkbox" id="save-chk-photo"> also save the snapshot photo (optional)
+        </label>
+      </div>
+      <div class="row" style="justify-content:flex-end;">
+        <button class="secondary" onclick="closeSaveModal()">cancel</button>
+        <button onclick="confirmSave()">save</button>
+      </div>
+      <p class="muted" id="save-confirm-msg" style="margin-top:12px; margin-bottom:0; display:none;">saved.</p>
+    </div>
+  </div>
+
+  <!-- eye color zoom modal -->
+  <div class="modal-backdrop" id="color-modal" style="display:none;" onclick="if(event.target===this) closeColorModal()">
+    <div class="modal-box" style="text-align:center;">
+      <button class="modal-close" onclick="closeColorModal()" aria-label="close">&#10005;</button>
+      <h1 style="font-size:16px;" id="color-modal-title">eye color</h1>
+      <div id="color-modal-swatch" style="width:120px; height:120px; border-radius:50%; margin:14px auto; border:1px solid var(--line);"></div>
+      <div class="muted" id="color-modal-rgb"></div>
+      <div class="breakdown" style="margin-top:16px; text-align:left;" id="color-modal-rarity"></div>
+    </div>
+  </div>
+
+  <!-- computer-vision analysis (not part of the score, separate button) -->
+  <div class="screen" id="screen-cv">
+    <div class="eyebrow"><span>computer-vision analysis</span><span>optional</span></div>
+    <h1>facial landmark eye snapshot</h1>
+    <p>this runs a real model — mediapipe's face landmarker — in your browser to find 478 points on your face, including your iris outlines, then takes a still snapshot and measures both eyes against each other for size, position, symmetry, and estimated eye color.</p>
+    <p class="muted">it's genuine computer vision, not a guess — but it's a single snapshot, unvalidated thresholds, and easily thrown off by lighting, angle, or hair. treat any flag here as a reason to get a real exam, not as a result on its own.</p>
+    <button class="ghost" style="padding:0 0 14px; display:block;" onclick="openPrivacyModal()">where does this data go? &rarr;</button>
+    <ul id="cv-instructions">
+      <li>hold the camera at eye level, roughly arm's length away</li>
+      <li>face a light source — avoid strong backlight or shadows across your face</li>
+      <li>push hair away from your eyes and remove sunglasses (regular glasses are fine)</li>
+      <li>use the eye-gap slider below the camera to match the guide circles to your own eye spacing, then line both eyes up inside them and look straight into the camera</li>
+      <li>once aligned, press "capture snapshot" — it takes one photo and analyzes that photo; if your eyes are closed or no face is found, hit retake to go live again</li>
+    </ul>
+    <div class="stage" id="cv-stage" style="height:240px;">
+      <button onclick="startCv()">turn on camera &amp; load model</button>
+    </div>
+    <div id="cv-gapctrl-wrap"></div>
+    <div class="prompt" id="cv-prompt"></div>
+    <div class="row" id="cv-actions" style="justify-content:center; margin-top:4px;"></div>
+    <div id="cv-results"></div>
+    <div class="actions">
+      <span></span>
+      <button class="secondary" onclick="goTo('results')">back to results</button>
+    </div>
+  </div>
+
+  <!-- privacy disclaimer modal -->
+  <div class="modal-backdrop" id="privacy-modal" style="display:none;" onclick="if(event.target===this) closePrivacyModal()">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closePrivacyModal()" aria-label="close">&#10005;</button>
+      <h1 style="font-size:16px;">your camera data stays on this device</h1>
+      <p>the face model and all its math run entirely in your browser. the video frames, the landmark points, and the color samples are never uploaded, streamed, or sent to any server — nothing about your camera leaves this device.</p>
+      <p>the camera turns off as soon as a snapshot is captured, and none of it is saved once you leave or refresh this page.</p>
+      <p class="muted" style="margin-bottom:0;">this only covers the eye-snapshot feature above — it doesn't change how the rest of the page or your browser works.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const LETTERS = ['e','c','o','a','s','t','n','h','z','v'];
+const WORDS = ['cat','dog','sun','sea','fox','owl','ant','bee','ivy','oak','elm','ram'];
+const FAIL_LIMIT = 3;
+const ROUND_CAP = 30;
+const COLOR_ROUND_CAP = 15; // color test ends after 15 rounds, independent of the other tests
+const PERI_ROUNDS = 5;
+
+const results = {
+  acuity: {bestLevel:-1, status:null},
+  color: {bestLevel:-1, status:null},
+  contrast: {bestLevel:-1, status:null},
+  near: {bestLevel:-1, status:null},
+  peri: {bestLevel:-1, status:null},
+  astig: {yes:0, no:0, status:null},
+  amsler: {yes:0, no:0, status:null},
+};
+
+let lastLetter = null;
+let lastTestResults = null;
+let lastCvResult = null;
+let lastCvPhoto = null;
+function pickChoices(correct, pool, n){
+  const rest = pool.filter(l => l !== correct);
+  const picks = [];
+  while(picks.length < n-1 && picks.length < rest.length){
+    const l = rest[Math.floor(Math.random()*rest.length)];
+    if(!picks.includes(l)) picks.push(l);
+  }
+  picks.push(correct);
+  return picks.sort(() => Math.random()-0.5);
+}
+function pickLetter(){
+  let letter;
+  do { letter = LETTERS[Math.floor(Math.random()*LETTERS.length)]; } while(letter === lastLetter);
+  lastLetter = letter;
+  return letter;
+}
+
+function goTo(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  if(name === 'acuity') startAcuity();
+  if(name === 'color') startColor();
+  if(name === 'contrast') startContrast();
+  if(name === 'near') startNear();
+  if(name === 'peri') startPeri();
+  if(name === 'astig') startAstig();
+  if(name === 'amsler') startAmsler();
+  if(name === 'results'){ stopCvCamera(); showResults(); }
+  if(name === 'cv') { /* left idle until the user clicks the start button */ }
+  if(name === 'history') renderHistoryList();
+  if(name === 'eyestats') renderEyeStats();
+  if(name === 'intro') refreshIntroSummary();
+  if(name !== 'cv') stopCvCamera();
+}
+
+const TEST_ORDER = ['acuity','color','contrast','near','peri','astig','amsler','results'];
+function nextTest(current){
+  if(current === 'peri') stopPeriTimer();
+  const i = TEST_ORDER.indexOf(current);
+  goTo(TEST_ORDER[i+1]);
+}
+
+function skipTest(name){
+  results[name].status = 'skipped';
+  nextTest(name);
+}
+
+/* idk always moves straight to the next test - it isn't a guess, so it shouldn't count toward the fail streak */
+function idkAnswer(test){
+  results[test].status = 'unsure';
+  nextTest(test);
+}
+
+/* ---------- test 1: acuity ---------- */
+let acuityLevel = 0;
+let acuityFailStreak = 0;
+
+function acuitySnellenAt(level){
+  return Math.max(6, Math.round(160 * Math.pow(0.78, level)));
+}
+function acuitySizeAt(level){
+  return Math.max(5, Math.round(acuitySnellenAt(level) * 0.55));
+}
+
+function startAcuity(){
+  acuityLevel = 0;
+  acuityFailStreak = 0;
+  renderAcuity();
+}
+
+function renderAcuity(){
+  document.getElementById('acuity-count').textContent = 'round ' + (acuityLevel+1) + ' / ' + ROUND_CAP;
+  const size = acuitySizeAt(acuityLevel);
+  const letter = pickLetter();
+  const el = document.getElementById('acuity-letter');
+  el.textContent = letter;
+  el.style.fontSize = size + 'px';
+
+  const choicesEl = document.getElementById('acuity-choices');
+  choicesEl.innerHTML = '';
+  pickChoices(letter, LETTERS, 4).forEach(opt => {
+    const b = document.createElement('button');
+    b.textContent = opt;
+    b.onclick = () => acuityAnswer(opt === letter);
+    choicesEl.appendChild(b);
+  });
+}
+
+function acuityAnswer(correct){
+  if(correct){
+    results.acuity.bestLevel = acuityLevel;
+    acuityFailStreak = 0;
+    acuityLevel++;
+  } else {
+    acuityFailStreak++;
+    acuityLevel++;
+  }
+  if(acuityFailStreak >= FAIL_LIMIT || acuityLevel >= ROUND_CAP){
+    nextTest('acuity');
+  } else {
+    renderAcuity();
+  }
+}
+
+/* ---------- test 2: color ---------- */
+let colorLevel = 0;
+let colorFailStreak = 0;
+
+function colorDeltaAt(level){
+  return Math.max(0.8, 18 * Math.pow(0.80, level));
+}
+
+function startColor(){
+  colorLevel = 0;
+  colorFailStreak = 0;
+  renderColor();
+}
+
+function renderColor(){
+  document.getElementById('color-count').textContent = 'round ' + (colorLevel+1) + ' / ' + COLOR_ROUND_CAP;
+  const hue = Math.floor(Math.random()*360);
+  const sat = 55;
+  const light = 55;
+  const delta = colorDeltaAt(colorLevel);
+  const oddIndex = Math.floor(Math.random()*9);
+
+  const grid = document.getElementById('color-grid');
+  grid.innerHTML = '';
+  for(let i=0;i<9;i++){
+    const b = document.createElement('button');
+    b.className = 'swatch';
+    const l = (i === oddIndex) ? light + delta : light;
+    b.style.background = `hsl(${hue}, ${sat}%, ${l}%)`;
+    b.onclick = () => colorAnswer(i === oddIndex);
+    grid.appendChild(b);
+  }
+}
+
+function colorAnswer(correct){
+  if(correct){
+    results.color.bestLevel = colorLevel;
+    colorFailStreak = 0;
+    colorLevel++;
+  } else {
+    colorFailStreak++;
+    colorLevel++;
+  }
+  if(colorFailStreak >= FAIL_LIMIT || colorLevel >= COLOR_ROUND_CAP){
+    nextTest('color');
+  } else {
+    renderColor();
+  }
+}
+
+/* ---------- test 3: contrast ---------- */
+let contrastLevel = 0;
+let contrastFailStreak = 0;
+
+function contrastAlphaAt(level){
+  return Math.max(0.03, 0.85 * Math.pow(0.80, level));
+}
+
+function startContrast(){
+  contrastLevel = 0;
+  contrastFailStreak = 0;
+  renderContrast();
+}
+
+function renderContrast(){
+  document.getElementById('contrast-count').textContent = 'round ' + (contrastLevel+1) + ' / ' + ROUND_CAP;
+  const alpha = contrastAlphaAt(contrastLevel);
+  const letter = pickLetter();
+  const el = document.getElementById('contrast-letter');
+  el.textContent = letter;
+  el.style.color = `rgba(21,25,26, ${alpha})`;
+
+  const choicesEl = document.getElementById('contrast-choices');
+  choicesEl.innerHTML = '';
+  pickChoices(letter, LETTERS, 4).forEach(opt => {
+    const b = document.createElement('button');
+    b.textContent = opt;
+    b.onclick = () => contrastAnswer(opt === letter);
+    choicesEl.appendChild(b);
+  });
+}
+
+function contrastAnswer(correct){
+  if(correct){
+    results.contrast.bestLevel = contrastLevel;
+    contrastFailStreak = 0;
+    contrastLevel++;
+  } else {
+    contrastFailStreak++;
+    contrastLevel++;
+  }
+  if(contrastFailStreak >= FAIL_LIMIT || contrastLevel >= ROUND_CAP){
+    nextTest('contrast');
+  } else {
+    renderContrast();
+  }
+}
+
+/* ---------- test 4: near vision ---------- */
+let nearLevel = 0;
+let nearFailStreak = 0;
+
+function nearSizeAt(level){
+  return Math.max(4, Math.round(34 * Math.pow(0.82, level)));
+}
+
+function startNear(){
+  nearLevel = 0;
+  nearFailStreak = 0;
+  renderNear();
+}
+
+function renderNear(){
+  document.getElementById('near-count').textContent = 'round ' + (nearLevel+1) + ' / ' + ROUND_CAP;
+  const size = nearSizeAt(nearLevel);
+  const word = WORDS[Math.floor(Math.random()*WORDS.length)];
+  const el = document.getElementById('near-word');
+  el.textContent = word;
+  el.style.fontSize = size + 'px';
+
+  const choicesEl = document.getElementById('near-choices');
+  choicesEl.innerHTML = '';
+  pickChoices(word, WORDS, 4).forEach(opt => {
+    const b = document.createElement('button');
+    b.textContent = opt;
+    b.onclick = () => nearAnswer(opt === word);
+    choicesEl.appendChild(b);
+  });
+}
+
+function nearAnswer(correct){
+  if(correct){
+    results.near.bestLevel = nearLevel;
+    nearFailStreak = 0;
+    nearLevel++;
+  } else {
+    nearFailStreak++;
+    nearLevel++;
+  }
+  if(nearFailStreak >= FAIL_LIMIT || nearLevel >= ROUND_CAP){
+    nextTest('near');
+  } else {
+    renderNear();
+  }
+}
+
+/* ---------- test 5: peripheral awareness (fixed 5 rounds) ---------- */
+let periLevel = 0;
+let periTimer = null;
+
+function periDurationAt(level){
+  return Math.max(150, 800 - level*110);
+}
+function periSizeAt(level){
+  return Math.max(16, Math.round(46 * Math.pow(0.90, level)));
+}
+
+function stopPeriTimer(){
+  if(periTimer){ clearTimeout(periTimer); periTimer = null; }
+}
+
+function startPeri(){
+  periLevel = 0;
+  stopPeriTimer();
+  renderPeriRoundStart();
+}
+
+function renderPeriRoundStart(){
+  document.getElementById('peri-count').textContent = 'round ' + (periLevel+1) + ' / ' + PERI_ROUNDS;
+  document.getElementById('peri-prompt').textContent = 'focus on the dot, then click start round';
+  const stage = document.getElementById('peri-stage');
+  stage.innerHTML = '<div class="fixdot"></div>';
+  const startBtn = document.createElement('button');
+  startBtn.textContent = 'start round';
+  startBtn.className = 'secondary';
+  startBtn.style.position = 'absolute';
+  startBtn.style.bottom = '14px';
+  startBtn.style.left = '50%';
+  startBtn.style.transform = 'translateX(-50%)';
+  startBtn.onclick = () => runPeriFlash();
+  stage.appendChild(startBtn);
+  document.getElementById('peri-choices').innerHTML = '';
+}
+
+function runPeriFlash(){
+  const stage = document.getElementById('peri-stage');
+  stage.innerHTML = '<div class="fixdot"></div>';
+  document.getElementById('peri-prompt').textContent = 'watch the edges of the box';
+
+  const letter = pickLetter();
+  const angle = Math.random()*Math.PI*2;
+  const radius = 42;
+  const leftPct = 50 + Math.cos(angle)*radius;
+  const topPct = 50 + Math.sin(angle)*radius;
+
+  const letterEl = document.createElement('span');
+  letterEl.className = 'peri-letter';
+  letterEl.textContent = letter;
+  letterEl.style.fontSize = periSizeAt(periLevel) + 'px';
+  letterEl.style.left = leftPct + '%';
+  letterEl.style.top = topPct + '%';
+  letterEl.style.transform = 'translate(-50%,-50%)';
+  stage.appendChild(letterEl);
+
+  periTimer = setTimeout(() => {
+    letterEl.remove();
+    document.getElementById('peri-prompt').textContent = 'which letter flashed?';
+    const choicesEl = document.getElementById('peri-choices');
+    choicesEl.innerHTML = '';
+    pickChoices(letter, LETTERS, 4).forEach(opt => {
+      const b = document.createElement('button');
+      b.textContent = opt;
+      b.onclick = () => periAnswer(opt === letter);
+      choicesEl.appendChild(b);
+    });
+  }, periDurationAt(periLevel));
+}
+
+function periAnswer(correct){
+  if(correct) results.peri.bestLevel = periLevel;
+  periLevel++;
+  document.getElementById('peri-choices').innerHTML = '';
+  if(periLevel >= PERI_ROUNDS){
+    nextTest('peri');
+  } else {
+    renderPeriRoundStart();
+  }
+}
+
+/* ---------- test 6: astigmatism (fixed short round) ---------- */
+let astigRound = 0;
+const ASTIG_ROUNDS = 2;
+const astigLineCounts = [12, 18];
+
+function startAstig(){
+  astigRound = 0;
+  renderAstig();
+}
+
+function renderAstig(){
+  document.getElementById('astig-count').textContent = 'pattern ' + (astigRound+1) + ' / ' + ASTIG_ROUNDS;
+  const n = astigLineCounts[astigRound];
+  const size = 180;
+  const cx = size/2, cy = size/2, r = 82;
+  let lines = '';
+  for(let i=0;i<n;i++){
+    const angle = (Math.PI * i) / n;
+    const x1 = cx + r*Math.cos(angle);
+    const y1 = cy + r*Math.sin(angle);
+    const x2 = cx - r*Math.cos(angle);
+    const y2 = cy - r*Math.sin(angle);
+    lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#15191a" stroke-width="2"/>`;
+  }
+  document.getElementById('astig-stage').innerHTML =
+    `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      ${lines}
+      <circle cx="${cx}" cy="${cy}" r="3" fill="#2f5d50"/>
+    </svg>`;
+}
+
+function answerAstig(val){
+  if(val === 'yes') results.astig.yes++;
+  else results.astig.no++;
+  advanceAstig();
+}
+
+function advanceAstig(){
+  astigRound++;
+  if(astigRound >= ASTIG_ROUNDS){
+    nextTest('astig');
+  } else {
+    renderAstig();
+  }
+}
+
+/* ---------- test 7: amsler grid (fixed short round) ---------- */
+let amslerRound = 0;
+const AMSLER_ROUNDS = 2;
+const amslerSpacing = [18, 14];
+
+function startAmsler(){
+  amslerRound = 0;
+  renderAmsler();
+}
+
+function renderAmsler(){
+  document.getElementById('amsler-count').textContent = 'grid ' + (amslerRound+1) + ' / ' + AMSLER_ROUNDS;
+  const size = 180;
+  const step = amslerSpacing[amslerRound];
+  let lines = '';
+  for(let x=0; x<=size; x+=step){
+    lines += `<line x1="${x}" y1="0" x2="${x}" y2="${size}" stroke="#15191a" stroke-width="1"/>`;
+  }
+  for(let y=0; y<=size; y+=step){
+    lines += `<line x1="0" y1="${y}" x2="${size}" y2="${y}" stroke="#15191a" stroke-width="1"/>`;
+  }
+  document.getElementById('amsler-stage').innerHTML =
+    `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      ${lines}
+      <circle cx="${size/2}" cy="${size/2}" r="3" fill="#2f5d50"/>
+    </svg>`;
+}
+
+function answerAmsler(val){
+  if(val === 'yes') results.amsler.yes++;
+  else results.amsler.no++;
+  advanceAmsler();
+}
+
+function advanceAmsler(){
+  amslerRound++;
+  if(amslerRound >= AMSLER_ROUNDS){
+    nextTest('amsler');
+  } else {
+    renderAmsler();
+  }
+}
+
+/* ---------- results ---------- */
+const CAP_NORM = {
+  acuity: 22,
+  color: 15,
+  contrast: 20,
+  near: 18,
+};
+
+function scoreFor(test, raw){
+  const r = results[test];
+  if(r.status === 'skipped' || r.status === 'unsure') return null;
+  return raw;
+}
+
+function showResults(){
+  const a = results.acuity;
+  const snellen = a.bestLevel >= 0 ? acuitySnellenAt(a.bestLevel) : 400;
+  document.getElementById('result-snellen').textContent =
+    (a.status === 'skipped' || a.status === 'unsure') ? a.status : ('20/' + snellen);
+
+  const scores = {};
+  scores.acuity = scoreFor('acuity', Math.round(Math.min(100, ((a.bestLevel+1)/CAP_NORM.acuity)*100)));
+  scores.color = scoreFor('color', Math.round(Math.min(100, ((results.color.bestLevel+1)/CAP_NORM.color)*100)));
+  scores.contrast = scoreFor('contrast', Math.round(Math.min(100, ((results.contrast.bestLevel+1)/CAP_NORM.contrast)*100)));
+  scores.near = scoreFor('near', Math.round(Math.min(100, ((results.near.bestLevel+1)/CAP_NORM.near)*100)));
+  scores.peri = scoreFor('peri', Math.round(Math.min(100, ((results.peri.bestLevel+1)/PERI_ROUNDS)*100)));
+
+  const astig = results.astig;
+  const astigAnswered = astig.yes + astig.no;
+  scores.astig = scoreFor('astig', astigAnswered === 0 ? 50 : Math.round((astig.yes/astigAnswered)*100));
+
+  const amsler = results.amsler;
+  const amslerAnswered = amsler.yes + amsler.no;
+  scores.amsler = scoreFor('amsler', amslerAnswered === 0 ? 50 : Math.round((amsler.yes/amslerAnswered)*100));
+
+  const valid = Object.values(scores).filter(v => v !== null);
+  const overall = valid.length ? Math.round(valid.reduce((s,v)=>s+v,0)/valid.length) : 0;
+  document.getElementById('result-score').textContent = overall;
+
+  const statusLabel = test => {
+    const s = results[test].status;
+    return s === 'skipped' ? 'skipped' : (s === 'unsure' ? 'unsure' : null);
+  };
+  const label = (test, v) => {
+    const st = statusLabel(test);
+    return st ? st : (v + ' / 100');
+  };
+  const rows = [
+    ['visual acuity', 'acuity', scores.acuity],
+    ['color perception', 'color', scores.color],
+    ['contrast sensitivity', 'contrast', scores.contrast],
+    ['near vision', 'near', scores.near],
+    ['peripheral awareness', 'peri', scores.peri],
+    ['astigmatism screen', 'astig', scores.astig],
+    ['grid distortion screen', 'amsler', scores.amsler],
+  ];
+  document.getElementById('result-breakdown').innerHTML = rows.map(r =>
+    `<div class="breakdown-row"><span>${r[0]}</span><span>${label(r[1], r[2])}</span></div>`
+  ).join('');
+
+  lastTestResults = {
+    snellen: document.getElementById('result-snellen').textContent,
+    overall,
+    rows: rows.map(r => [r[0], label(r[1], r[2])])
+  };
+}
+
+/* ---------- optional: computer-vision eye analysis (mediapipe face landmarker) ---------- */
+const CV_CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const CV_MODEL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+let cvLandmarker = null;
+let cvStream = null;
+
+function stopCvCamera(){
+  if(cvStream){
+    cvStream.getTracks().forEach(t => t.stop());
+    cvStream = null;
+  }
+}
+
+async function startCv(){
+  const stage = document.getElementById('cv-stage');
+  const prompt = document.getElementById('cv-prompt');
+  stage.innerHTML = '';
+  prompt.textContent = 'loading model…';
+  document.getElementById('cv-actions').innerHTML = '';
+  document.getElementById('cv-results').innerHTML = '';
+
+  try{
+    if(!cvLandmarker){
+      const vision = await import(CV_CDN);
+      const { FaceLandmarker, FilesetResolver } = vision;
+      const filesetResolver = await FilesetResolver.forVisionTasks(`${CV_CDN}/wasm`);
+      try{
+        cvLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+          baseOptions: { modelAssetPath: CV_MODEL, delegate: "GPU" },
+          outputFaceBlendshapes: false,
+          runningMode: "VIDEO",
+          numFaces: 1
+        });
+      } catch(gpuErr){
+        // GPU/WebGL delegate support is inconsistent across mobile browsers
+        // (especially Android) — CPU delegate is slower but far more reliable there
+        cvLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+          baseOptions: { modelAssetPath: CV_MODEL, delegate: "CPU" },
+          outputFaceBlendshapes: false,
+          runningMode: "VIDEO",
+          numFaces: 1
+        });
+      }
+    }
+  } catch(err){
+    prompt.textContent = 'could not load the model — check your connection and try again';
+    stage.innerHTML = '<button onclick="startCv()">retry</button>';
+    return;
+  }
+
+  try{
+    // ask for the front camera specifically — without this, many phones
+    // default to the rear camera for getUserMedia, which is the wrong one
+    // for a self-facing eye snapshot. "ideal" (not "exact") so it still
+    // falls back gracefully on devices/browsers that don't support the hint.
+    cvStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "user" } }
+    });
+  } catch(err){
+    try{
+      // some older mobile browsers reject constraint objects outright —
+      // retry with a bare video request rather than failing completely
+      cvStream = await navigator.mediaDevices.getUserMedia({video:true});
+    } catch(err2){
+      prompt.textContent = 'camera not available or permission was denied';
+      return;
+    }
+  }
+
+  stage.innerHTML = `
+    <div class="cv-video-wrap" id="cv-video-wrap">
+      <video autoplay playsinline webkit-playsinline muted id="cv-video"></video>
+      <div class="cv-overlay">
+        <div class="cv-guide left"></div>
+        <div class="cv-guide right"></div>
+      </div>
+      <div class="cv-flash" id="cv-flash"></div>
+    </div>`;
+  const video = document.getElementById('cv-video');
+  video.muted = true; // iOS Safari can otherwise refuse to autoplay the stream
+  video.srcObject = cvStream;
+  prompt.textContent = 'drag the slider so the guides match your eye spacing, then capture';
+
+  const gapWrap = document.getElementById('cv-gapctrl-wrap');
+  gapWrap.innerHTML = `
+    <div class="cv-gapctrl">
+      <span>eye gap</span>
+      <input type="range" id="cv-gap-slider" min="14" max="30" step="0.5" value="22">
+      <span>guides</span>
+    </div>`;
+  const wrapEl = document.getElementById('cv-video-wrap');
+  document.getElementById('cv-gap-slider').oninput = (e) => {
+    wrapEl.style.setProperty('--eye-gap', e.target.value + '%');
+  };
+
+  const actions = document.getElementById('cv-actions');
+  actions.innerHTML = '';
+  const captureBtn = document.createElement('button');
+  captureBtn.className = 'secondary';
+  captureBtn.textContent = 'capture snapshot';
+  captureBtn.onclick = () => captureSnapshot(video);
+  actions.appendChild(captureBtn);
+}
+
+/* takes exactly one photo — the moment you press capture, the frame is
+   frozen and the camera stops. everything after that (landmarks, iris
+   color, symmetry) is computed from that single still image. hitting
+   "retake snapshot" is what goes back to a live feed. */
+const CV_MIN_OPENNESS = 0.12; // if either eye reads as nearly closed (blink), we ask for a retake instead of scoring a bad frame
+
+async function captureSnapshot(video){
+  const prompt = document.getElementById('cv-prompt');
+  const out = document.getElementById('cv-results');
+  const flash = document.getElementById('cv-flash');
+  document.getElementById('cv-actions').innerHTML = '';
+  out.innerHTML = '';
+  if(flash){ flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); }
+
+  prompt.textContent = 'capturing…';
+
+  // freeze the photo first, then stop the camera immediately — nothing
+  // about this reads any further frames after this point
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const res = cvLandmarker.detectForVideo(video, performance.now());
+
+  stopCvCamera();
+  document.getElementById('cv-gapctrl-wrap').innerHTML = '';
+
+  if(!res.faceLandmarks || !res.faceLandmarks.length){
+    prompt.textContent = 'no face detected in the photo — center your face in the guides and retake';
+    document.getElementById('cv-stage').innerHTML = '<button onclick="startCv()">retake</button>';
+    return;
+  }
+
+  prompt.textContent = 'analyzing photo…';
+  await new Promise(r => setTimeout(r, 250));
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const m = measureFace(res.faceLandmarks[0], imgData, canvas.width, canvas.height);
+
+  if(m.L.openness < CV_MIN_OPENNESS || m.R.openness < CV_MIN_OPENNESS){
+    prompt.textContent = 'eyes look closed or nearly closed in that photo — retake with eyes open';
+    document.getElementById('cv-stage').innerHTML = '<button onclick="startCv()">retake</button>';
+    return;
+  }
+
+  renderCvResults(m, canvas);
+}
+
+
+function dist(a, b){
+  return Math.hypot(a.x-b.x, a.y-b.y);
+}
+
+/* ---------- eye color estimation from sampled iris pixels ---------- */
+function rgbToHsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h=0, s=0; const l=(max+min)/2;
+  const d=max-min;
+  if(d !== 0){
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h = ((g-b)/d + (g<b?6:0)); break;
+      case g: h = (b-r)/d + 2; break;
+      case b: h = (r-g)/d + 4; break;
+    }
+    h *= 60;
+  }
+  return {h, s, l};
+}
+
+function median(nums){
+  const s = nums.slice().sort((a,b)=>a-b);
+  const mid = Math.floor(s.length/2);
+  return s.length % 2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
+
+/* trimmed mean: drops the top/bottom `trim` fraction of values before
+   averaging, so a couple of bad frames (blink, glare, head jerk) can't
+   drag the result — much steadier than a plain average over 14 samples */
+function trimmedMean(nums, trim){
+  const vals = nums.filter(v => v !== null && v !== undefined && !Number.isNaN(v));
+  if(vals.length === 0) return null;
+  if(vals.length < 4) return avg(vals);
+
+  // first pass: fixed percentile trim (handles a symmetric spread of noise)
+  const s = vals.slice().sort((a,b)=>a-b);
+  const cut = Math.floor(s.length * (trim||0.15));
+  const pctTrimmed = s.slice(cut, s.length - cut || undefined);
+  const kept = pctTrimmed.length ? pctTrimmed : s;
+
+  // second pass: MAD-based rejection on top of that — catches a single sharp
+  // outlier (head jerk, momentary occlusion) that a fixed percentile trim can
+  // miss because it doesn't know how far off the outlier actually is
+  const med = median(kept);
+  const absDevs = kept.map(v => Math.abs(v - med));
+  const mad = median(absDevs) || 0;
+  if(mad === 0) return med;
+  const scaled = mad * 1.4826; // normal-consistent scale estimate
+  const inliers = kept.filter(v => Math.abs(v - med) <= 3 * scaled);
+  return avg(inliers.length ? inliers : kept);
+}
+
+function classifyEyeColor(r,g,b){
+  const {h,s,l} = rgbToHsl(r,g,b);
+  if(l < 0.14) return 'dark brown';
+  if(s < 0.12) return l > 0.6 ? 'light gray' : (l > 0.4 ? 'gray' : 'dark gray');
+  if(h < 25 || h >= 350) return l < 0.24 ? 'dark brown' : (l < 0.36 ? 'brown' : 'amber');
+  if(h < 45) return l < 0.30 ? 'hazel' : (l < 0.45 ? 'hazel-amber' : 'light amber');
+  if(h < 75) return l < 0.32 ? 'hazel-green' : 'hazel';
+  if(h < 100) return l < 0.30 ? 'dark olive' : 'green-hazel';
+  if(h < 170) return l < 0.35 ? 'dark green' : 'green';
+  if(h < 200) return l < 0.40 ? 'blue-green' : 'gray-blue';
+  return l < 0.35 ? 'dark blue' : 'blue';
+}
+
+/* rough global-population rarity scale for eye color, grouped into the same
+   families classifyEyeColor produces. these are widely-cited population
+   estimates, not a precise measurement — brown is by far the most common
+   worldwide, green is generally considered the rarest common category. */
+const EYE_COLOR_RARITY = {
+  'dark brown':   {pct: 45, tier: 'common'},
+  'brown':        {pct: 25, tier: 'common'},
+  'amber':        {pct: 5,  tier: 'uncommon'},
+  'light amber':  {pct: 4,  tier: 'uncommon'},
+  'hazel-amber':  {pct: 4,  tier: 'uncommon'},
+  'hazel':        {pct: 5,  tier: 'uncommon'},
+  'hazel-green':  {pct: 3,  tier: 'rare'},
+  'green-hazel':  {pct: 3,  tier: 'rare'},
+  'dark olive':   {pct: 2,  tier: 'rare'},
+  'green':        {pct: 2,  tier: 'rare'},
+  'dark green':   {pct: 1.5, tier: 'rare'},
+  'blue-green':   {pct: 2,  tier: 'rare'},
+  'gray-blue':    {pct: 2,  tier: 'rare'},
+  'blue':         {pct: 7,  tier: 'uncommon'},
+  'dark blue':    {pct: 3,  tier: 'rare'},
+  'gray':         {pct: 1,  tier: 'very rare'},
+  'light gray':   {pct: 0.5, tier: 'very rare'},
+  'dark gray':    {pct: 1,  tier: 'very rare'}
+};
+
+function eyeColorRarity(name){
+  const info = EYE_COLOR_RARITY[name];
+  if(!info) return null;
+  return {
+    pct: info.pct,
+    tier: info.tier,
+    label: info.pct < 1
+      ? 'under 1% of people worldwide'
+      : '~' + info.pct + '% of people worldwide'
+  };
+}
+
+/* broad family for each specific shade name — used to tell "two different
+   shades of the same color" (e.g. brown vs dark brown) apart from genuinely
+   different eye colors (e.g. blue vs brown), which is what heterochromia is */
+const EYE_COLOR_FAMILY = {
+  'dark brown': 'brown', 'brown': 'brown',
+  'amber': 'amber', 'light amber': 'amber', 'hazel-amber': 'amber',
+  'hazel': 'hazel', 'hazel-green': 'hazel', 'green-hazel': 'hazel',
+  'dark olive': 'green', 'green': 'green', 'dark green': 'green',
+  'blue-green': 'blue-green', 'gray-blue': 'blue-green',
+  'blue': 'blue', 'dark blue': 'blue',
+  'gray': 'gray', 'light gray': 'gray', 'dark gray': 'gray'
+};
+function eyeColorFamily(name){ return EYE_COLOR_FAMILY[name] || null; }
+
+/* samples a RING between the pupil and the outer edge of the iris (not the
+   center, which is the pupil) at roughly 50%-85% of the iris radius,
+   skipping catchlight reflections and residual dark pupil/eyelash pixels.
+   Collects every qualifying pixel and returns the per-channel MEDIAN rather
+   than a mean, since the median shrugs off a stray reflection or shadow
+   pixel far more reliably than an average would. */
+function sampleIrisColor(imgData, w, h, iris, irisRadiusPx){
+  const cx = iris.x * w, cy = iris.y * h;
+  const rOuter = irisRadiusPx * 0.85;
+  const rInner = irisRadiusPx * 0.5;
+  const rs = [], gs = [], bs = [];
+  const step = Math.max(1, Math.round(irisRadiusPx / 12));
+  for(let dy=-rOuter; dy<=rOuter; dy+=step){
+    for(let dx=-rOuter; dx<=rOuter; dx+=step){
+      const rr = Math.hypot(dx,dy);
+      if(rr < rInner || rr > rOuter) continue;
+      const x = Math.round(cx+dx), y = Math.round(cy+dy);
+      if(x<0 || y<0 || x>=w || y>=h) continue;
+      const idx = (y*w+x)*4;
+      const r = imgData.data[idx], g = imgData.data[idx+1], b = imgData.data[idx+2];
+      const brightness = (r+g+b)/3;
+      if(brightness > 220) continue; // skip glare/catchlight
+      if(brightness < 28) continue;  // skip residual pupil / eyelash shadow
+      rs.push(r); gs.push(g); bs.push(b);
+    }
+  }
+  if(rs.length < 4) return null;
+  return {r: median(rs), g: median(gs), b: median(bs), n: rs.length};
+}
+
+/* samples the sclera (white of the eye) near the outer/inner corners and
+   returns its average color — used as a white-balance reference so the
+   iris reading isn't thrown off by warm indoor light or a blue-ish monitor
+   glow. also doubles as the redness estimate. */
+function sampleScleraColor(imgData, w, h, outer, inner, top, bottom, iris){
+  if(!imgData) return null;
+  const midY = (top.y+bottom.y)/2;
+  // four points (both corners, each blended slightly toward the lid-center
+  // height as well as the corner height) instead of two — halves the chance
+  // that a single stray shadow or eyelash pixel skews the white-balance ref
+  const pts = [
+    {x: outer.x*0.65 + iris.x*0.35, y: midY*0.65 + iris.y*0.35},
+    {x: inner.x*0.65 + iris.x*0.35, y: midY*0.65 + iris.y*0.35},
+    {x: outer.x*0.55 + iris.x*0.45, y: top.y*0.5 + midY*0.5},
+    {x: inner.x*0.55 + iris.x*0.45, y: bottom.y*0.5 + midY*0.5}
+  ];
+  const rs=[], gs=[], bs=[];
+  pts.forEach(p => {
+    const x = Math.round(p.x*w), y = Math.round(p.y*h);
+    if(x<0||y<0||x>=w||y>=h) return;
+    const idx=(y*w+x)*4;
+    const r=imgData.data[idx], g=imgData.data[idx+1], b=imgData.data[idx+2];
+    if((r+g+b)/3 < 60) return; // too dark, probably not sclera
+    rs.push(r); gs.push(g); bs.push(b);
+  });
+  if(rs.length===0) return null;
+  // median rather than mean — one bad point among four shouldn't swing the reference
+  return {r: median(rs), g: median(gs), b: median(bs)};
+}
+
+/* white-balances the iris reading against the sclera sample so ambient
+   lighting color doesn't bias the estimated eye color */
+function whiteBalance(iris, sclera){
+  if(!iris || !sclera) return iris;
+  const target = 210;
+  const gain = c => Math.min(1.6, Math.max(0.6, target / Math.max(30, c)));
+  return {
+    r: Math.min(255, iris.r * gain(sclera.r)),
+    g: Math.min(255, iris.g * gain(sclera.g)),
+    b: Math.min(255, iris.b * gain(sclera.b))
+  };
+}
+
+/* ---------- per-frame measurement ---------- */
+function measureFace(lm, imgData, w, h){
+  const leftOuter = lm[33], leftInner = lm[133], leftTop = lm[159], leftBottom = lm[145], leftIris = lm[468];
+  const rightInner = lm[362], rightOuter = lm[263], rightTop = lm[386], rightBottom = lm[374], rightIris = lm[473];
+  // mediapipe gives 4 boundary points per iris (roughly right/top/left/bottom
+  // of the ring); averaging both the horizontal and vertical diameter instead
+  // of a single pair makes the radius estimate far less sensitive to head yaw
+  // or eyelid occlusion cutting one side of the ring off
+  const leftIrisEdgeA = lm[469], leftIrisEdgeB = lm[471];
+  const leftIrisEdgeC = lm[470], leftIrisEdgeD = lm[472];
+  const rightIrisEdgeA = lm[474], rightIrisEdgeB = lm[476];
+  const rightIrisEdgeC = lm[475], rightIrisEdgeD = lm[477];
+  const leftBrow = lm[105], rightBrow = lm[334];
+  // face-width reference points (outer face contour, roughly ear-to-ear at cheekbone height)
+  const faceLeftEdge = lm[234], faceRightEdge = lm[454];
+
+  function eyeMetrics(outer, inner, top, bottom, iris){
+    const width = dist(outer, inner);
+    const height = dist(top, bottom);
+    const openness = width > 0 ? height/width : 0;
+    const midX = (outer.x + inner.x)/2;
+    const midY = (top.y + bottom.y)/2;
+    const horizOffset = width > 0 ? (iris.x - midX)/width : 0;
+    const vertOffset = height > 0 ? (iris.y - midY)/height : 0;
+    return {openness, horizOffset, vertOffset, width};
+  }
+
+  const L = eyeMetrics(leftOuter, leftInner, leftTop, leftBottom, leftIris);
+  const R = eyeMetrics(rightInner, rightOuter, rightTop, rightBottom, rightIris);
+
+  const leftIrisDiaNorm = (dist(leftIrisEdgeA, leftIrisEdgeB) + dist(leftIrisEdgeC, leftIrisEdgeD)) / 2;
+  const rightIrisDiaNorm = (dist(rightIrisEdgeA, rightIrisEdgeB) + dist(rightIrisEdgeC, rightIrisEdgeD)) / 2;
+  const leftIrisDia = leftIrisDiaNorm / (L.width || 1);
+  const rightIrisDia = rightIrisDiaNorm / (R.width || 1);
+
+  const leftBrowGap = dist(leftBrow, leftTop) / (L.width || 1);
+  const rightBrowGap = dist(rightBrow, rightTop) / (R.width || 1);
+
+  // canthal tilt: angle of the line from inner to outer eye corner, relative
+  // to horizontal — compared left vs right catches lid-slant asymmetry
+  function canthalTilt(inner, outer){
+    return Math.atan2(outer.y - inner.y, outer.x - inner.x) * (180/Math.PI);
+  }
+  const leftTilt = canthalTilt(leftInner, leftOuter);
+  const rightTilt = canthalTilt(rightInner, rightOuter) * -1; // mirror so "up" is comparable across eyes
+  const canthalTiltDiff = Math.abs(leftTilt - rightTilt);
+
+  let leftColor = null, rightColor = null, leftRedness = null, rightRedness = null;
+  if(imgData){
+    const leftIrisRadiusPx = (leftIrisDiaNorm/2) * w;
+    const rightIrisRadiusPx = (rightIrisDiaNorm/2) * w;
+
+    const leftRaw = sampleIrisColor(imgData, w, h, leftIris, leftIrisRadiusPx);
+    const rightRaw = sampleIrisColor(imgData, w, h, rightIris, rightIrisRadiusPx);
+    const leftSclera = sampleScleraColor(imgData, w, h, leftOuter, leftInner, leftTop, leftBottom, leftIris);
+    const rightSclera = sampleScleraColor(imgData, w, h, rightInner, rightOuter, rightTop, rightBottom, rightIris);
+
+    leftColor = whiteBalance(leftRaw, leftSclera);
+    rightColor = whiteBalance(rightRaw, rightSclera);
+    // keep the underlying pixel count so cross-frame averaging can weight a
+    // frame with a full, clean iris ring more than one with a thin sliver
+    if(leftColor) leftColor.n = leftRaw ? leftRaw.n : 0;
+    if(rightColor) rightColor.n = rightRaw ? rightRaw.n : 0;
+
+    if(leftSclera) leftRedness = Math.max(0, (leftSclera.r - (leftSclera.g+leftSclera.b)/2) / 255);
+    if(rightSclera) rightRedness = Math.max(0, (rightSclera.r - (rightSclera.g+rightSclera.b)/2) / 255);
+  }
+
+  const faceWidth = dist(faceLeftEdge, faceRightEdge) || 1;
+  const interpupillary = dist(leftIris, rightIris);
+  const eyeSpacingRatio = interpupillary / faceWidth;
+
+  return {
+    L, R,
+    opennessDiff: Math.abs(L.openness - R.openness),
+    horizDiff: Math.abs(L.horizOffset - R.horizOffset),
+    vertDiff: Math.abs(L.vertOffset - R.vertOffset),
+    pupilDiff: Math.abs(leftIrisDia - rightIrisDia),
+    browDiff: Math.abs(leftBrowGap - rightBrowGap),
+    canthalTiltDiff,
+    redness: (leftRedness !== null || rightRedness !== null)
+      ? avg([leftRedness, rightRedness].filter(v => v !== null))
+      : null,
+    eyeSpacingRatio,
+    leftColor, rightColor
+  };
+}
+
+function avg(nums){ return nums.reduce((a,b)=>a+b,0) / nums.length; }
+
+/* builds the shared eye-recognition readout markup; reused for both a live
+   snapshot and a saved historical entry */
+function cvResultsHTML(m){
+  const OPENNESS_THRESHOLD = 0.12;
+  const HORIZ_THRESHOLD = 0.10;
+  const VERT_THRESHOLD = 0.08;
+  const PUPIL_THRESHOLD = 0.09;
+  const BROW_THRESHOLD = 0.14;
+  const TILT_THRESHOLD = 6; // degrees
+  const REDNESS_THRESHOLD = 0.10;
+  const SPACING_LOW = 0.28, SPACING_HIGH = 0.40; // typical interpupillary/face-width range
+
+  const flags = [];
+  if(m.opennessDiff > OPENNESS_THRESHOLD) flags.push('one eye looks noticeably more open than the other');
+  if(m.horizDiff > HORIZ_THRESHOLD) flags.push('the irises are not centered the same way in each eye horizontally, which can be a sign of eye misalignment');
+  if(m.vertDiff > VERT_THRESHOLD) flags.push('the irises are not centered the same way in each eye vertically');
+  if(m.pupilDiff > PUPIL_THRESHOLD) flags.push('the two pupils/irises read as noticeably different sizes (anisocoria) — worth mentioning to a doctor even outside this tool');
+  if(m.browDiff > BROW_THRESHOLD) flags.push('one eyebrow sits noticeably closer to its eye than the other, which can suggest lid or brow asymmetry');
+  if(m.canthalTiltDiff > TILT_THRESHOLD) flags.push('the corner-to-corner tilt of the two eyes differs noticeably, which can suggest asymmetric lid slant');
+  if(m.redness !== null && m.redness > REDNESS_THRESHOLD) flags.push('the whites of the eyes read redder than expected in this snapshot — could just be lighting or tiredness, but worth noting if it persists');
+  if(m.eyeSpacingRatio !== undefined && (m.eyeSpacingRatio < SPACING_LOW || m.eyeSpacingRatio > SPACING_HIGH)) flags.push('eye spacing relative to face width reads outside the typical range for this snapshot — usually just a head-angle artifact, not a medical sign');
+
+  const pct = v => Math.round(v*100);
+  const metrics = [m.opennessDiff/OPENNESS_THRESHOLD, m.horizDiff/HORIZ_THRESHOLD, m.vertDiff/VERT_THRESHOLD, m.pupilDiff/PUPIL_THRESHOLD, m.browDiff/BROW_THRESHOLD, m.canthalTiltDiff/TILT_THRESHOLD];
+  const strain = Math.max(...metrics);
+  const confidence = strain < 0.5 ? 'low' : (strain < 1 ? 'moderate' : 'high');
+
+  const colorRow = (label, c) => {
+    if(!c) return `<div class="breakdown-row"><span>${label}</span><span>not detected</span></div>`;
+    const r = Math.round(c.r), g = Math.round(c.g), b = Math.round(c.b);
+    const rgb = `rgb(${r},${g},${b})`;
+    const name = classifyEyeColor(c.r, c.g, c.b);
+    return `<div class="breakdown-row" style="cursor:pointer;" onclick="openColorModal('${label}', ${r}, ${g}, ${b}, '${name}')"><span><span class="eyeswatch" style="background:${rgb};"></span>${label}</span><span>${name} &rsaquo;</span></div>`;
+  };
+
+  const html = `
+    <div class="slip" style="margin-top:14px;">
+      <div class="label">estimated eye color <span class="muted">(click to view)</span></div>
+      ${colorRow('left eye', m.leftColor)}
+      ${colorRow('right eye', m.rightColor)}
+    </div>
+    <div class="slip">
+      <div class="label">eye symmetry readout</div>
+      <div class="breakdown-row"><span>eyelid openness difference</span><span>${pct(m.opennessDiff)}%</span></div>
+      <div class="breakdown-row"><span>horizontal iris asymmetry</span><span>${pct(m.horizDiff)}%</span></div>
+      <div class="breakdown-row"><span>vertical iris asymmetry</span><span>${pct(m.vertDiff)}%</span></div>
+      <div class="breakdown-row"><span>pupil/iris size difference</span><span>${pct(m.pupilDiff)}%</span></div>
+      <div class="breakdown-row"><span>brow-to-eye gap difference</span><span>${pct(m.browDiff)}%</span></div>
+      <div class="breakdown-row"><span>eye-corner tilt difference</span><span>${m.canthalTiltDiff.toFixed(1)}°</span></div>
+      <div class="breakdown-row"><span>scleral redness estimate</span><span>${m.redness===null ? 'n/a' : pct(m.redness)+'%'}</span></div>
+      <div class="breakdown-row"><span>eye spacing / face width</span><span>${(m.eyeSpacingRatio*100).toFixed(1)}%</span></div>
+      <div class="breakdown-row"><span>overall asymmetry confidence</span><span>${confidence}</span></div>
+    </div>
+    <p style="margin-top:14px;">${flags.length ? flags.join('. ') + '.' : 'no significant asymmetry flagged in this snapshot.'}</p>
+    <p class="muted">${flags.length ? 'this can also just mean the lighting, angle, or your expression was uneven — retake it a couple of times before reading anything into it, and bring it up with an eye doctor if it keeps showing up.' : 'a clean read on one snapshot is a good sign, but it does not rule anything out — this tool cannot diagnose any eye condition.'} eye color estimates are also just a rough read of screen and camera lighting, not a clinical measurement.</p>
+  `;
+  return html;
+}
+
+function renderCvResults(m, canvas){
+  const prompt = document.getElementById('cv-prompt');
+  const out = document.getElementById('cv-results');
+  const stage = document.getElementById('cv-stage');
+
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  canvas.style.objectFit = 'cover';
+  canvas.style.transform = 'scaleX(-1)';
+  stage.innerHTML = '';
+  stage.appendChild(canvas);
+
+  lastCvResult = m;
+  try{ lastCvPhoto = canvas.toDataURL('image/jpeg', 0.85); } catch(e){ lastCvPhoto = null; }
+
+  prompt.textContent = 'analysis complete';
+  out.innerHTML = cvResultsHTML(m) + `
+    <div class="row" style="margin-top:14px;">
+      <button class="secondary" onclick="startCv()">retake snapshot</button>
+      <button class="ghost" onclick="openSaveModal()">save this reading</button>
+    </div>
+  `;
+}
+
+/* ---------- privacy disclaimer modal ---------- */
+function openPrivacyModal(){
+  document.getElementById('privacy-modal').style.display = 'flex';
+}
+function closePrivacyModal(){
+  document.getElementById('privacy-modal').style.display = 'none';
+}
+
+/* ---------- eye color zoom modal ---------- */
+function openColorModal(label, r, g, b, name){
+  document.getElementById('color-modal-title').textContent = label + ' — ' + name;
+  document.getElementById('color-modal-swatch').style.background = `rgb(${r},${g},${b})`;
+  const hex = '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+  document.getElementById('color-modal-rgb').textContent = `rgb(${r}, ${g}, ${b}) — ${hex}`;
+
+  const rarityEl = document.getElementById('color-modal-rarity');
+  const rarity = eyeColorRarity(name);
+  rarityEl.innerHTML = rarity
+    ? `<div class="breakdown-row"><span>rarity</span><span>${rarity.tier}</span></div>
+       <div class="breakdown-row"><span>found in</span><span>${rarity.label}</span></div>`
+    : '';
+
+  document.getElementById('color-modal').style.display = 'flex';
+}
+function closeColorModal(){
+  document.getElementById('color-modal').style.display = 'none';
+}
+
+document.addEventListener('keydown', (e) => {
+  if(e.key !== 'Escape') return;
+  ['privacy-modal','color-modal','save-modal'].forEach(id => {
+    const modal = document.getElementById(id);
+    if(modal && modal.style.display !== 'none') modal.style.display = 'none';
+  });
+});
+
+/* ---------- save + local history ---------- */
+const HISTORY_KEY = 'eyeTestHistory_v1';
+
+function loadHistory(){
+  try{ return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  catch(e){ return []; }
+}
+function persistHistory(arr){
+  try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); }
+  catch(e){ /* storage full or unavailable — fail quietly */ }
+}
+
+function openSaveModal(){
+  const chkTests = document.getElementById('save-chk-tests');
+  const chkCv = document.getElementById('save-chk-cv');
+  const chkPhoto = document.getElementById('save-chk-photo');
+
+  chkTests.checked = !!lastTestResults;
+  chkTests.disabled = !lastTestResults;
+  chkCv.checked = !!lastCvResult;
+  chkCv.disabled = !lastCvResult;
+  chkPhoto.checked = false;
+  chkPhoto.disabled = !(lastCvResult && lastCvPhoto);
+
+  document.getElementById('save-confirm-msg').style.display = 'none';
+  document.getElementById('save-modal').style.display = 'flex';
+}
+function closeSaveModal(){
+  document.getElementById('save-modal').style.display = 'none';
+}
+
+function confirmSave(){
+  const saveTests = document.getElementById('save-chk-tests').checked && lastTestResults;
+  const saveCv = document.getElementById('save-chk-cv').checked && lastCvResult;
+  const savePhoto = document.getElementById('save-chk-photo').checked && lastCvPhoto;
+
+  if(!saveTests && !saveCv){
+    closeSaveModal();
+    return;
+  }
+
+  const entry = {
+    id: Date.now(),
+    ts: Date.now(),
+    testResults: saveTests ? lastTestResults : null,
+    cv: saveCv ? lastCvResult : null,
+    photo: (saveCv && savePhoto) ? lastCvPhoto : null
+  };
+
+  const history = loadHistory();
+  history.push(entry);
+  persistHistory(history);
+
+  document.getElementById('save-confirm-msg').style.display = 'block';
+  refreshIntroSummary();
+  setTimeout(closeSaveModal, 1100);
+}
+
+function fmtDate(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) +
+    ' · ' + d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+}
+
+function refreshIntroSummary(){
+  const history = loadHistory();
+  const row = document.getElementById('intro-history-row');
+  row.style.display = history.length ? 'flex' : 'none';
+}
+
+function renderHistoryList(){
+  const history = loadHistory().slice().sort((a,b) => b.ts - a.ts);
+  const summary = document.getElementById('history-summary');
+  const withTests = history.filter(h => h.testResults);
+  const cvCount = history.filter(h => h.cv).length;
+  const avgScore = withTests.length
+    ? Math.round(withTests.reduce((s,h)=>s+h.testResults.overall,0)/withTests.length)
+    : null;
+  summary.innerHTML = `
+    <div class="label">average test score</div>
+    <div class="score-num" style="font-size:38px;"><span>${avgScore===null ? '—' : avgScore}</span><span class="score-of">${avgScore===null ? '' : '/100 avg'}</span></div>
+    <div class="muted" style="margin-top:2px;">${withTests.length} saved test result${withTests.length===1?'':'s'}${cvCount ? ', ' + cvCount + ' eye recognition reading' + (cvCount===1?'':'s') : ''}</div>
+  `;
+
+  const list = document.getElementById('history-list');
+  if(history.length === 0){
+    list.innerHTML = '<p class="muted">nothing saved yet.</p>';
+    return;
+  }
+  list.innerHTML = history.map(h => {
+    const buttons = [];
+    if(h.testResults) buttons.push(`<button class="secondary" onclick="viewHistoryDetail(${h.id}, 'tests')">test results</button>`);
+    if(h.cv) buttons.push(`<button class="secondary" onclick="viewHistoryDetail(${h.id}, 'cv')">eye recognition</button>`);
+    return `
+      <div class="slip">
+        <div class="label">${fmtDate(h.ts)}</div>
+        ${h.testResults ? `<div class="breakdown-row" style="border-top:none; padding-top:0;"><span>overall score</span><span>${h.testResults.overall} / 100</span></div>` : ''}
+        <div class="row" style="margin-top:10px;">${buttons.join('')}
+          <button class="ghost" onclick="deleteHistoryEntry(${h.id})">delete</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function deleteHistoryEntry(id){
+  const history = loadHistory().filter(h => h.id !== id);
+  persistHistory(history);
+  renderHistoryList();
+  refreshIntroSummary();
+}
+
+function viewHistoryDetail(id, kind){
+  const entry = loadHistory().find(h => h.id === id);
+  if(!entry) return;
+  const title = document.getElementById('history-detail-title');
+  const body = document.getElementById('history-detail-body');
+
+  if(kind === 'tests' && entry.testResults){
+    title.textContent = 'test results — ' + fmtDate(entry.ts);
+    body.innerHTML = `
+      <div class="slip">
+        <div class="label">visual acuity</div>
+        <div class="big">${entry.testResults.snellen}</div>
+        <div class="score-of" style="margin-top:14px;">overall score</div>
+        <div class="score-num"><span>${entry.testResults.overall}</span><span class="score-of">/100</span></div>
+      </div>
+      <div class="breakdown">
+        ${entry.testResults.rows.map(r => `<div class="breakdown-row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}
+      </div>`;
+  } else if(kind === 'cv' && entry.cv){
+    title.textContent = 'eye recognition — ' + fmtDate(entry.ts);
+    body.innerHTML = (entry.photo ? `<div class="stage" style="height:200px;"><img src="${entry.photo}" style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1);"></div>` : '') + cvResultsHTML(entry.cv);
+  } else {
+    title.textContent = 'saved entry';
+    body.innerHTML = '<p class="muted">nothing to show.</p>';
+  }
+  goTo('history-detail');
+}
+
+function renderEyeStats(){
+  const allHistory = loadHistory();
+  const history = allHistory.filter(h => h.cv);
+  const testHistory = allHistory.filter(h => h.testResults);
+  const body = document.getElementById('eyestats-body');
+  if(history.length === 0 && testHistory.length === 0){
+    body.innerHTML = '<p class="muted">nothing saved yet — run the eye recognition snapshot or the vision tests and save a reading to see averages here.</p>';
+    return;
+  }
+  const cvs = history.map(h => h.cv);
+  const avgColor = key => {
+    const vals = cvs.map(c => c[key]).filter(Boolean);
+    if(vals.length === 0) return null;
+    return {
+      r: avg(vals.map(v=>v.r)), g: avg(vals.map(v=>v.g)), b: avg(vals.map(v=>v.b))
+    };
+  };
+  const avgMetric = key => avg(cvs.map(c => c[key]).filter(v => v !== null && v !== undefined));
+
+  const colorRow = (label, c) => {
+    if(!c) return `<div class="breakdown-row"><span>${label}</span><span>not enough data</span></div>`;
+    const r = Math.round(c.r), g = Math.round(c.g), b = Math.round(c.b);
+    const name = classifyEyeColor(c.r, c.g, c.b);
+    const rarity = eyeColorRarity(name);
+    const rarityTag = rarity ? ` <span class="muted" style="font-size:11px;">(${rarity.tier})</span>` : '';
+    return `<div class="breakdown-row" style="cursor:pointer;" onclick="openColorModal('${label}', ${r}, ${g}, ${b}, '${name}')"><span><span class="eyeswatch" style="background:rgb(${r},${g},${b});"></span>${label}</span><span>${name}${rarityTag} &rsaquo;</span></div>`;
+  };
+
+  const pct = v => Math.round(v*100);
+  const redness = cvs.map(c=>c.redness).filter(v => v !== null);
+
+  // sorted rarest-to-commonest, kept for context even though we now render bars
+  const rarityScale = Object.entries(EYE_COLOR_RARITY).sort((a,b) => a[1].pct - b[1].pct);
+  const maxPct = rarityScale[rarityScale.length-1][1].pct; // scales the bars relative to the most common shade
+
+  const rarityBar = (label, name, rarity) => `
+    <div class="rarity-bar-row">
+      <div class="rarity-bar-label"><span>${label} — ${name}</span><span>${rarity.label}</span></div>
+      <div class="rarity-bar-track"><div class="rarity-bar-fill" style="width:${Math.min(100, (rarity.pct/maxPct)*100)}%;"></div></div>
+    </div>`;
+
+  const leftAvg = avgColor('leftColor'), rightAvg = avgColor('rightColor');
+  const leftName = leftAvg ? classifyEyeColor(leftAvg.r, leftAvg.g, leftAvg.b) : null;
+  const rightName = rightAvg ? classifyEyeColor(rightAvg.r, rightAvg.g, rightAvg.b) : null;
+  const leftFamily = leftName ? eyeColorFamily(leftName) : null;
+  const rightFamily = rightName ? eyeColorFamily(rightName) : null;
+
+  let rarityBody = '';
+  if(!leftAvg && !rightAvg){
+    rarityBody = '<p class="muted">not enough data.</p>';
+  } else if(leftFamily && rightFamily && leftFamily !== rightFamily){
+    // genuinely different eye colors (not just different shades of the same
+    // color) — heterochromia, so show each eye's own bar rather than
+    // averaging them into a color that's really a blend of neither
+    const leftRarity = eyeColorRarity(leftName), rightRarity = eyeColorRarity(rightName);
+    rarityBody = `
+      ${leftRarity ? rarityBar('left eye', leftName, leftRarity) : ''}
+      ${rightRarity ? rarityBar('right eye', rightName, rightRarity) : ''}
+      <div class="heterochromia-note">
+        your left and right eyes are landing in genuinely different color families (not just different shades) —
+        this pattern is called <strong>heterochromia</strong>. it's usually just a difference in how much melanin
+        each iris has, present from birth or appearing in early childhood; it can also occur later from certain
+        eye conditions, injury, or some medications, so it's worth mentioning to an eye doctor if it's new.
+      </div>`;
+  } else {
+    // same family (or only one eye read) — average the two readings into
+    // a single combined color and show one bar for it
+    const combined = (leftAvg && rightAvg)
+      ? {r: (leftAvg.r+rightAvg.r)/2, g: (leftAvg.g+rightAvg.g)/2, b: (leftAvg.b+rightAvg.b)/2}
+      : (leftAvg || rightAvg);
+    const combinedName = classifyEyeColor(combined.r, combined.g, combined.b);
+    const combinedRarity = eyeColorRarity(combinedName);
+    rarityBody = combinedRarity ? rarityBar('both eyes (averaged)', combinedName, combinedRarity) : '<p class="muted">not enough data.</p>';
+  }
+
+  const cvSections = history.length === 0 ? '<p class="muted">no saved eye recognition readings yet — run the camera snapshot and save a reading to see color/symmetry averages here.</p>' : `
+    <p class="muted">averaged across ${cvs.length} saved reading${cvs.length===1?'':'s'}.</p>
+    <div class="slip">
+      <div class="label">average eye color</div>
+      ${colorRow('left eye', leftAvg)}
+      ${colorRow('right eye', rightAvg)}
+    </div>
+    <div class="slip">
+      <div class="label">eye color rarity scale</div>
+      <p class="muted" style="margin-bottom:10px;">based on widely-cited global population estimates — brown is most common, green and gray tones are rarest.</p>
+      ${rarityBody}
+    </div>
+    <div class="slip">
+      <div class="label">average eye symmetry readout</div>
+      <div class="breakdown-row"><span>eyelid openness difference</span><span>${pct(avgMetric('opennessDiff'))}%</span></div>
+      <div class="breakdown-row"><span>horizontal iris asymmetry</span><span>${pct(avgMetric('horizDiff'))}%</span></div>
+      <div class="breakdown-row"><span>vertical iris asymmetry</span><span>${pct(avgMetric('vertDiff'))}%</span></div>
+      <div class="breakdown-row"><span>pupil/iris size difference</span><span>${pct(avgMetric('pupilDiff'))}%</span></div>
+      <div class="breakdown-row"><span>brow-to-eye gap difference</span><span>${pct(avgMetric('browDiff'))}%</span></div>
+      <div class="breakdown-row"><span>eye-corner tilt difference</span><span>${avgMetric('canthalTiltDiff').toFixed(1)}°</span></div>
+      <div class="breakdown-row"><span>scleral redness estimate</span><span>${redness.length ? pct(avg(redness))+'%' : 'n/a'}</span></div>
+      <div class="breakdown-row"><span>eye spacing / face width</span><span>${(avgMetric('eyeSpacingRatio')*100).toFixed(1)}%</span></div>
+    </div>
+  `;
+
+  // ---- average across all saved vision-test results (acuity, color, contrast, etc.) ----
+  const parseScore = str => {
+    const m = /^(\d+)\s*\/\s*100$/.exec(str || '');
+    return m ? parseInt(m[1], 10) : null;
+  };
+  const testSectionHTML = (() => {
+    if(testHistory.length === 0){
+      return `<div class="slip"><div class="label">average across all saved tests</div><p class="muted">no saved vision test results yet — run the vision tests and save a reading to see this.</p></div>`;
+    }
+    const overallVals = testHistory.map(h => h.testResults.overall).filter(v => v !== null && v !== undefined);
+    const overallAvg = overallVals.length ? Math.round(avg(overallVals)) : null;
+
+    // every saved entry's rows share the same order/labels, so read the
+    // category labels off the first entry and average column-by-column
+    const labels = testHistory[0].testResults.rows.map(r => r[0]);
+    const categoryRows = labels.map((label, i) => {
+      const vals = testHistory.map(h => parseScore(h.testResults.rows[i] && h.testResults.rows[i][1])).filter(v => v !== null);
+      const catAvg = vals.length ? Math.round(avg(vals)) : null;
+      return `<div class="breakdown-row"><span>${label}</span><span>${catAvg === null ? 'n/a' : catAvg + ' / 100'}</span></div>`;
+    }).join('');
+
+    return `
+      <div class="slip">
+        <div class="label">average across all saved tests</div>
+        <p class="muted" style="margin-bottom:10px;">averaged across ${testHistory.length} saved test result${testHistory.length===1?'':'s'}.</p>
+        <div class="score-num" style="font-size:38px;"><span>${overallAvg===null?'—':overallAvg}</span><span class="score-of">${overallAvg===null?'':'/100 avg'}</span></div>
+        <div class="breakdown">
+          ${categoryRows}
+        </div>
+      </div>`;
+  })();
+
+  // average visual acuity across saved tests, shown as "20/NN" at the very top
+  const snellenAvgHTML = (() => {
+    const denoms = testHistory
+      .map(h => /^20\/(\d+)$/.exec(h.testResults.snellen))
+      .filter(Boolean)
+      .map(m => parseInt(m[1], 10));
+    if(denoms.length === 0){
+      return `<div class="slip" style="text-align:center;"><div class="label">average visual acuity</div><p class="muted">no saved test results yet</p></div>`;
+    }
+    const avgDenom = Math.round(avg(denoms));
+    return `
+      <div class="slip" style="text-align:center;">
+        <div class="label">average visual acuity</div>
+        <div class="big" style="font-size:34px;">20/${avgDenom}</div>
+        <p class="muted" style="margin-top:6px;">averaged across ${denoms.length} saved test result${denoms.length===1?'':'s'}.</p>
+      </div>`;
+  })();
+
+  body.innerHTML = snellenAvgHTML + cvSections + testSectionHTML;
+}
+
+function restart(){
+  results.acuity = {bestLevel:-1, status:null};
+  results.color = {bestLevel:-1, status:null};
+  results.contrast = {bestLevel:-1, status:null};
+  results.near = {bestLevel:-1, status:null};
+  results.peri = {bestLevel:-1, status:null};
+  results.astig = {yes:0, no:0, status:null};
+  results.amsler = {yes:0, no:0, status:null};
+  goTo('intro');
+}
+
+refreshIntroSummary();
+</script>
+
+</body>
+</html>
